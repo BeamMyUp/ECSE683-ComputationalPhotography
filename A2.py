@@ -63,10 +63,10 @@ def greyedge(img, sigma, n, p):
             kg += gd[x, y]
             kr += rd[x, y]
 
-    size = img.shape[0] * img.shape[1]
-    kb = math.pow(kb / size, 1/p)
-    kg = math.pow(kg / size, 1/p)
-    kr = math.pow(kr / size, 1/p)
+    size = float(img.shape[0] * img.shape[1])
+    kb = math.pow(kb / size, 1./float(p))
+    kg = math.pow(kg / size, 1./float(p))
+    kr = math.pow(kr / size, 1./float(p))
 
     for y in range(0, img.shape[1]):
         for x in range(0, img.shape[0]):
@@ -110,8 +110,13 @@ def main():
     if isGreyWorld:
         greyworld(img1)
     elif isGreyEdge:
-        param = 3 # 6
-        greyedge(img1, 3, 1, 2)
+        sigma = 2
+        p = 2
+        n = 2
+        # kr = 5.68 x 10^15
+        # kg = 1.031 x 10^16
+        # kb = 8.1647 x 10^15
+        greyedge(img1, sigma, n, p)
 
     if normalize:
         cv.normalize(img1, img1, 0, 1, cv.NORM_MINMAX)
