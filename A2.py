@@ -96,6 +96,19 @@ def greyworld(img):
             img[x, y, 1] /= kg
             img[x, y, 2] /= kr
 
+def maxRGB(img):
+    kb, kg, kr = (0.0,) * 3
+
+    kb = np.max(img[:, :, 0])
+    kg = np.max(img[:, :, 1])
+    kr = np.max(img[:, :, 2])
+
+    for y in range(0, img.shape[1]):
+        for x in range(0, img.shape[0]):
+            img[x, y, 0] /= kb
+            img[x, y, 1] /= kg
+            img[x, y, 2] /= kr
+
 
 def main():
     filename = "white_balance_example_color_checkers.jpg"
@@ -103,6 +116,7 @@ def main():
     img1 = cv.imread(filename)
     img1 = img1.astype(float)
 
+    isMaxRGB = False
     isGreyWorld = False
     isGreyEdge = True
     normalize = True
@@ -113,10 +127,9 @@ def main():
         sigma = 2
         p = 2
         n = 2
-        # kr = 5.68 x 10^15
-        # kg = 1.031 x 10^16
-        # kb = 8.1647 x 10^15
         greyedge(img1, sigma, n, p)
+    elif isMaxRGB:
+        maxRGB(img1)
 
     if normalize:
         cv.normalize(img1, img1, 0, 1, cv.NORM_MINMAX)
