@@ -3,45 +3,44 @@ import math
 import cv2 as cv
 import numpy as np
 import scipy.ndimage as ndi
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 def gder(img, sigma, n):
     rd, gd, bd = (0.0,) * 3
+    red = img[:, :, 2]
+    green = img[:, :, 1]
+    blue = img[:, :, 0]
 
     if n is 1:  # first order derivative
         # red
-        red = img[:, :, 2]
         rdx = ndi.gaussian_filter(red, sigma, order=[1, 0], output=np.float64, mode='nearest')
         rdy = ndi.gaussian_filter(red, sigma, order=[0, 1], output=np.float64, mode='nearest')
         rd = np.sqrt(rdx**2 + rdy**2)
 
         # green
-        green = img[:, :, 1]
         gdx = ndi.gaussian_filter(green, sigma, order=[1, 0], output=np.float64, mode='nearest')
         gdy = ndi.gaussian_filter(green, sigma, order=[0, 1], output=np.float64, mode='nearest')
         gd = np.sqrt(gdx**2 + gdy**2)
 
         # blue
-        blue = img[:, :, 0]
         bdx = ndi.gaussian_filter(blue, sigma, order=[1, 0], output=np.float64, mode='nearest')
         bdy = ndi.gaussian_filter(blue, sigma, order=[0, 1], output=np.float64, mode='nearest')
         bd = np.sqrt(bdx**2 + bdy**2)
 
     if n is 2:  # second order derivative
-        red = img[:, :, 2]
         rdx = ndi.gaussian_filter(red, sigma, order=[2, 0], output=np.float64, mode='nearest')
         rdy = ndi.gaussian_filter(red, sigma, order=[0, 2], output=np.float64, mode='nearest')
         rdxy = ndi.gaussian_filter(red, sigma, order=[1, 1], output=np.float64, mode='nearest')
         rd = np.sqrt(rdx**2 + 4*rdxy**2 + rdy**2)
 
         # green
-        green = img[:, :, 1]
         gdx = ndi.gaussian_filter(green, sigma, order=[2, 0], output=np.float64, mode='nearest')
         gdy = ndi.gaussian_filter(green, sigma, order=[0, 2], output=np.float64, mode='nearest')
         gdxy = ndi.gaussian_filter(green, sigma, order=[1, 1], output=np.float64, mode='nearest')
         gd = np.sqrt(gdx**2 + 4*gdxy**2 + gdy**2)
 
         # blue
-        blue = img[:, :, 0]
         bdx = ndi.gaussian_filter(blue, sigma, order=[2, 0], output=np.float64, mode='nearest')
         bdy = ndi.gaussian_filter(blue, sigma, order=[0, 2], output=np.float64, mode='nearest')
         bdxy = ndi.gaussian_filter(blue, sigma, order=[1, 1], output=np.float64, mode='nearest')
@@ -109,12 +108,36 @@ def maxRGB(img):
             img[x, y, 1] /= kg
             img[x, y, 2] /= kr
 
+def gamut(img):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    red = img[:, :, 2]
+    green = img[:, :, 1]
+    blue = img[:, :, 0]
+
+
+    bgr = np.zeros(img.shape)
+    cv.normalize(img, bgr, 0, 1, cv.NORM_MINMAX)
+    size = img.shape[0] * img.shape[1]
+    bgr = np.reshape(bgr, [size, 3])
+
+    ax.scatter(blue, green, red, marker='o', facecolors=bgr)
+
+    ax.set_xlabel('Blue')
+    ax.set_ylabel('Green')
+    ax.set_zlabel('Red')
+
+    plt.show()
+
 
 def main():
     filename = "white_balance_example_color_checkers.jpg"
 
     img1 = cv.imread(filename)
     img1 = img1.astype(float)
+
+    gamut(img1)
 
     isMaxRGB = False
     isGreyWorld = False
