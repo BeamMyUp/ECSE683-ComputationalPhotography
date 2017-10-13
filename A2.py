@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 
 def gder(img, sigma, n):
     rd, gd, bd = (0.0,) * 3
-    red = img[:, :, 2]
+    red = img[:, :, 0]
     green = img[:, :, 1]
-    blue = img[:, :, 0]
+    blue = img[:, :, 2]
 
     if n is 1:  # first order derivative
         # red
@@ -46,102 +46,107 @@ def gder(img, sigma, n):
         bdxy = ndi.gaussian_filter(blue, sigma, order=[1, 1], output=np.float64, mode='nearest')
         bd = np.sqrt(bdx**2 + 4*bdxy**2 + bdy**2)
 
-    return bd, gd, rd
+    return rd, gd, bd
 
 def greyedge(img, sigma, n, p):
-    kb, kg, kr = (0.0,) * 3
-    bd, gd, rd = gder(img, sigma, n)
+    kr, kg, kb = (0.0,) * 3
+    rd, gd, bd = gder(img, sigma, n)
 
-    bd = np.abs(bd**p)
-    gd = np.abs(gd**p)
     rd = np.abs(rd**p)
+    gd = np.abs(gd**p)
+    bd = np.abs(bd**p)
 
     for y in range(0, img.shape[1]):
         for x in range(0, img.shape[0]):
-            kb += bd[x, y]
-            kg += gd[x, y]
             kr += rd[x, y]
+            kg += gd[x, y]
+            kb += bd[x, y]
 
     size = float(img.shape[0] * img.shape[1])
-    kb = math.pow(kb / size, 1./float(p))
-    kg = math.pow(kg / size, 1./float(p))
     kr = math.pow(kr / size, 1./float(p))
+    kg = math.pow(kg / size, 1./float(p))
+    kb = math.pow(kb / size, 1./float(p))
 
     for y in range(0, img.shape[1]):
         for x in range(0, img.shape[0]):
-            img[x, y, 0] /= kb
+            img[x, y, 0] /= kr
             img[x, y, 1] /= kg
-            img[x, y, 2] /= kr
+            img[x, y, 2] /= kb
 
 
 def greyworld(img):
-    kb, kg, kr = (0.0,) * 3
+    kr, kg, kb = (0.0,) * 3
 
     for y in range(0, img.shape[1]):
         for x in range(0, img.shape[0]):
-            kb += img[x, y, 0]
+            kr += img[x, y, 0]
             kg += img[x, y, 1]
-            kr += img[x, y, 2]
+            kb += img[x, y, 2]
 
     size = img.shape[0] * img.shape[1]
 
-    kb /= size
-    kg /= size
     kr /= size
+    kg /= size
+    kb /= size
 
     for y in range(0, img.shape[1]):
         for x in range(0, img.shape[0]):
-            img[x, y, 0] /= kb
+            img[x, y, 0] /= kr
             img[x, y, 1] /= kg
-            img[x, y, 2] /= kr
+            img[x, y, 2] /= kb
+
 
 def maxRGB(img):
-    kb, kg, kr = (0.0,) * 3
-
-    kb = np.max(img[:, :, 0])
+    kr = np.max(img[:, :, 0])
     kg = np.max(img[:, :, 1])
-    kr = np.max(img[:, :, 2])
+    kb = np.max(img[:, :, 2])
 
     for y in range(0, img.shape[1]):
         for x in range(0, img.shape[0]):
-            img[x, y, 0] /= kb
+            img[x, y, 0] /= kr
             img[x, y, 1] /= kg
-            img[x, y, 2] /= kr
+            img[x, y, 2] /= kb
 
-def gamut(img):
+def gamut(img, filename):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    red = img[:, :, 2]
+    red = img[:, :, 0]
     green = img[:, :, 1]
-    blue = img[:, :, 0]
+    blue = img[:, :, 2]
 
-
-    bgr = np.zeros(img.shape)
-    cv.normalize(img, bgr, 0, 1, cv.NORM_MINMAX)
+    rgb = np.zeros(img.shape)
+    cv.normalize(img, rgb, 0, 1, cv.NORM_MINMAX)
     size = img.shape[0] * img.shape[1]
-    bgr = np.reshape(bgr, [size, 3])
+    rgb = np.reshape(rgb, [size, 3])
 
-    ax.scatter(blue, green, red, marker='o', facecolors=bgr)
+    ax.scatter(red, green, blue, marker='o', facecolors=rgb)
 
-    ax.set_xlabel('Blue')
+    ax.set_xlabel('Red')
     ax.set_ylabel('Green')
-    ax.set_zlabel('Red')
+    ax.set_zlabel('Blue')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_zlim(0, 1)
 
-    plt.show()
+    ax.view_init(elev=20., azim=-135)
+    plt.savefig(filename)
 
 
 def main():
-    filename = "white_balance_example_color_checkers.jpg"
+    filename = "framed_sm.jpg"
 
     img1 = cv.imread(filename)
+    b, g, r = cv.split(img1)
+    img1 = cv.merge([r, g, b])
     img1 = img1.astype(float)
 
-    gamut(img1)
+    cv.normalize(img1, img1, 0, 1, cv.NORM_MINMAX)
+    # gamut(img1, "framed_gamut.jpg")
 
     isMaxRGB = False
-    isGreyWorld = False
-    isGreyEdge = True
+    isGreyWorld = True
+    isGreyEdge = False
     normalize = True
 
     if isGreyWorld:
@@ -157,7 +162,14 @@ def main():
     if normalize:
         cv.normalize(img1, img1, 0, 1, cv.NORM_MINMAX)
 
+    gamut(img1, "framed_gamut_greyWorld.jpg")
+
+    r, g, b = cv.split(img1)
+    img1 = cv.merge([b, g, r])
     cv.imshow('dst_rt', img1)
+#
+    cv.normalize(img1, img1, 0, 255, cv.NORM_MINMAX)
+    cv.imwrite("framed_greyEdge.jpg", img1)
     cv.waitKey(0)
 
 if __name__ == '__main__':
