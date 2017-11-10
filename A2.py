@@ -134,7 +134,7 @@ def gamut(img, filename):
 
 
 def main():
-    filename = "framed_sm.jpg"
+    filename = "imgA2/framed_sm.jpg"
 
     img1 = cv.imread(filename)
     b, g, r = cv.split(img1)
